@@ -8,7 +8,7 @@ a = Analysis(
     ['camera.py'],
     pathex=[],
     binaries=[],
-    datas=[('edited', '.'), ('overlay', '.'), ('pictures', '.')],
+    datas=[('assets', '.'), ('Fotos Massa', '.'), ('temp', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

@@ -1,105 +1,125 @@
 import pygame
 import pygame.camera
-
 import os
 import time
 import datetime
+import sys
 
+import xml.etree.ElementTree as ET
 from PIL import Image
-#import cv2
 
 pygame.init()
 pygame.camera.init()
 
-pygame.camera.list_cameras()
+# Lê as configurações do arquivo XML
+def read_config(filename):
+    tree = ET.parse(filename)
+    root = tree.getroot()
 
-for i in range(len(pygame.camera.list_cameras())):
-    camera = pygame.camera.Camera(pygame.camera.list_cameras()[i])
+    # Lê a resolução da câmera do arquivo XML
+    camera_resolution = root.find("camera_resolution")
+    width = int(camera_resolution.get("width"))
+    height = int(camera_resolution.get("height"))
+    camera_res = width, height
+
+    # Lê o desired_fps do arquivo XML
+    desired_fps = int(root.findtext("desired_fps"))
+
+    # Lê o animation_time do arquivo XML
+    animation_time = int(root.findtext("animation_time"))
+
+    return camera_res, desired_fps, animation_time
+
+# Carrega as configurações do arquivo XML
+config_filename = "config.xml"
+camera_res, desired_fps, animation_time = read_config(config_filename)
+
+
+
+
+
+"""for i in range(len(pygame.camera.list_cameras())):
+    camera = pygame.camera.Camera(pygame.camera.list_cameras()[i], camera_res)
     try:
-        camera.start()  # try to start the camera
+        camera.start()  # Tenta iniciar a camera
     except pygame.error:
         print("Failed to connect")
-        # if starting the camera raises a pygame.error exception, continue to the next camera
         continue
+    
     print(f"Connected to camera {i}")
-    break  # if camera is successfully started, break out of the loop
+    break"""
 
-camera_res = (1280, 720)
+camera = pygame.camera.Camera(pygame.camera.list_cameras()[1], camera_res)
+camera.start()  # Tenta iniciar a camera
 
-screen = pygame.display.set_mode((0,0), pygame.FULLSCREEN)
+screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 screen_res = screen.get_size()
 
-cam_overlay = pygame.image.load("overlay\overlay.png").convert_alpha()
+cam_overlay = pygame.image.load("assets\overlay.png").convert_alpha()
 cam_overlay = pygame.transform.scale(cam_overlay, screen_res)
 
 def editImage(imagem, filename):
-    save_path = "edited\\"
-
+    save_path = "Fotos Massa\\"
     imagem = Image.open(imagem)
     
-    overlay = Image.open("overlay\overlay2.png")
-    overlay = overlay.resize((imagem.size))
+    overlay = Image.open("assets\overlay2.png")
+    overlay = overlay.resize(imagem.size)
     
-    imagem.paste(overlay, (0,0), overlay)
-    imagem.save(save_path + f"edited-{filename}")
+    imagem.paste(overlay, (0, 0), overlay)
+    imagem.save(save_path + filename)
     
-    os.remove(os.path.join("pictures", filename))
+    os.remove(os.path.join("temp", filename))
     
-    imagem = pygame.image.load(save_path + f"edited-{filename}")
+    imagem = pygame.image.load(save_path + filename).convert()
     
     return imagem, True
 
+clock = pygame.time.Clock()
+desired_fps = 60
 
 while True:
+    clock.tick(desired_fps)
 
     capture = camera.get_image()
-
-    
     scaled_capture = pygame.transform.scale(capture, screen_res)
-    
-    screen.blit(scaled_capture, (0,0))
-    screen.blit(cam_overlay, (0,0))
-    
+
+    screen.blit(scaled_capture, (0, 0))
+    screen.blit(cam_overlay, (0, 0))
+
     pygame.display.flip()
-    
+
     for event in pygame.event.get():
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
-                filename = datetime.datetime.now().strftime("%d-%m-%Y_%H-%M-%S Massa-festa-pinhao.png" )
-                pygame.image.save(capture , os.path.join("pictures", filename))
-                
-                # Save the current time in milliseconds
+                filename = datetime.datetime.now().strftime("%d-%m-%Y_%H-%M-%S Massa-festa-pinhao.png")
+                pygame.image.save(capture, os.path.join("temp", filename))
+
                 start_time = pygame.time.get_ticks()
-                # Define the total time for the animation in milliseconds
                 animation_time = 150
-                # Create a loop that runs while the animation time hasn't elapsed
+
                 while pygame.time.get_ticks() - start_time < animation_time:
-                    # Alternate between displaying a white and black screen
                     if pygame.time.get_ticks() % 100 < 50:
                         screen.fill((255, 255, 255))
                     else:
                         screen.fill((0, 0, 0))
+
                     pygame.display.flip()
-                    pygame.time.wait(50)
-                
-                imagem, edited = editImage(imagem = os.path.join("pictures", filename), filename = filename)
+                    pygame.time.wait(2)
+
+                imagem, edited = editImage(imagem=os.path.join("temp", filename), filename=filename)
+
                 if edited:
-                    
                     imagem = pygame.transform.scale(imagem, screen_res)
-                    screen.blit(imagem, (0,0))
+                    screen.blit(imagem, (0, 0))
                     pygame.display.flip()
-                    time.sleep(4)
-                    
-                
-                    if event.key == pygame.K_ESCAPE:
-                        camera.stop()
-                        pygame.quit()
-                        exit()
-                
-                
-                
-                
+                    time.sleep(5)
+
+                if event.key == pygame.K_ESCAPE:
+                    camera.stop()
+                    pygame.quit()
+                    sys.exit()
+
             elif event.key == pygame.K_ESCAPE:
                 camera.stop()
                 pygame.quit()
-                exit()
+                sys.exit()

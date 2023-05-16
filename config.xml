@@ -1,0 +1,5 @@
+<config>
+    <camera_resolution width="1920" height="1080" />
+    <desired_fps>60</desired_fps>
+    <animation_time>150</animation_time>
+</config>
