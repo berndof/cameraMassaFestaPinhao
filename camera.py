@@ -1,5 +1,6 @@
 import pygame
 import pygame.camera
+
 import os
 import time
 import datetime
@@ -21,22 +22,21 @@ def read_config(filename):
     width = int(camera_resolution.get("width"))
     height = int(camera_resolution.get("height"))
     camera_res = width, height
-
+    print (camera_res)
     # Lê o desired_fps do arquivo XML
     desired_fps = int(root.findtext("desired_fps"))
 
     # Lê o animation_time do arquivo XML
     animation_time = int(root.findtext("animation_time"))
 
-    return camera_res, desired_fps, animation_time
+    camera_index = int(root.findtext("camera_index"))
+
+
+    return camera_index, camera_res, desired_fps, animation_time
 
 # Carrega as configurações do arquivo XML
 config_filename = "config.xml"
-camera_res, desired_fps, animation_time = read_config(config_filename)
-
-
-
-
+camera_index, camera_res, desired_fps, animation_time = read_config(config_filename)
 
 """for i in range(len(pygame.camera.list_cameras())):
     camera = pygame.camera.Camera(pygame.camera.list_cameras()[i], camera_res)
@@ -49,20 +49,20 @@ camera_res, desired_fps, animation_time = read_config(config_filename)
     print(f"Connected to camera {i}")
     break"""
 
-camera = pygame.camera.Camera(pygame.camera.list_cameras()[1], camera_res)
-camera.start()  # Tenta iniciar a camera
+camera = pygame.camera.Camera(pygame.camera.list_cameras()[camera_index], camera_res)
+camera.start() 
 
 screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 screen_res = screen.get_size()
 
-cam_overlay = pygame.image.load("assets\overlay.png").convert_alpha()
+cam_overlay = pygame.image.load("assets/overlay.png").convert_alpha()
 cam_overlay = pygame.transform.scale(cam_overlay, screen_res)
 
 def editImage(imagem, filename):
-    save_path = "Fotos Massa\\"
+    save_path = "Fotos Massa//"
     imagem = Image.open(imagem)
     
-    overlay = Image.open("assets\overlay2.png")
+    overlay = Image.open("assets/overlay2.png")
     overlay = overlay.resize(imagem.size)
     
     imagem.paste(overlay, (0, 0), overlay)
@@ -75,7 +75,6 @@ def editImage(imagem, filename):
     return imagem, True
 
 clock = pygame.time.Clock()
-desired_fps = 60
 
 while True:
     clock.tick(desired_fps)
@@ -95,7 +94,6 @@ while True:
                 pygame.image.save(capture, os.path.join("temp", filename))
 
                 start_time = pygame.time.get_ticks()
-                animation_time = 150
 
                 while pygame.time.get_ticks() - start_time < animation_time:
                     if pygame.time.get_ticks() % 100 < 50:
@@ -104,7 +102,7 @@ while True:
                         screen.fill((0, 0, 0))
 
                     pygame.display.flip()
-                    pygame.time.wait(2)
+                    pygame.time.wait(1)
 
                 imagem, edited = editImage(imagem=os.path.join("temp", filename), filename=filename)
 
@@ -112,12 +110,18 @@ while True:
                     imagem = pygame.transform.scale(imagem, screen_res)
                     screen.blit(imagem, (0, 0))
                     pygame.display.flip()
-                    time.sleep(5)
+                    show_image = True
+                    
+                    while show_image == True:
+                        for event in pygame.event.get():
+                            if event.type == pygame.KEYDOWN:
+                                if event.key == pygame.K_SPACE:
+                                    show_image = False
 
-                if event.key == pygame.K_ESCAPE:
-                    camera.stop()
-                    pygame.quit()
-                    sys.exit()
+                                elif event.key == pygame.K_ESCAPE:
+                                    camera.stop()
+                                    pygame.quit()
+                                    sys.exit()
 
             elif event.key == pygame.K_ESCAPE:
                 camera.stop()
