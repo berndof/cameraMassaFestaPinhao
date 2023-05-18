@@ -22,7 +22,6 @@ def read_config(filename):
     width = int(camera_resolution.get("width"))
     height = int(camera_resolution.get("height"))
     camera_res = width, height
-    print (camera_res)
     # Lê o desired_fps do arquivo XML
     desired_fps = int(root.findtext("desired_fps"))
 
