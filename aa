@@ -1,0 +1,11 @@
+'''
+            start_time = pygame.time.get_ticks()
+            while pygame.time.get_ticks() - start_time < animation_time:
+                if pygame.time.get_ticks() % 100 < 50:
+                    screen.fill((255, 255, 255))
+                else:
+                    screen.fill((0, 0, 0))
+
+                    pygame.display.flip()
+                    pygame.time.wait(1)
+'''
