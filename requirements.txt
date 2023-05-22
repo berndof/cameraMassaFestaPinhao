@@ -1,2 +1,5 @@
 pygame
 pillow
+numpy
+opencv-python
+configparser
