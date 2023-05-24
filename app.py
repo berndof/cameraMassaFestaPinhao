@@ -1,5 +1,6 @@
 import cv2
 import pygame
+import pygame.camera
 import numpy as np
 import sys 
 
@@ -11,17 +12,17 @@ screen_res = (1280, 720)
 
 # Pygame
 pygame.init()
+pygame.camera.init()
 screen = pygame.display.set_mode((screen_res[0],screen_res[1]), pygame.FULLSCREEN)
 clock = pygame.time.Clock()
 ######################################
 
 ######################################
 # Camera
-cam = cv2.VideoCapture(0)
-cam.set(cv2.CAP_PROP_FRAME_WIDTH, 913)
-cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 512)
-cam.set(cv2.CAP_PROP_FPS, 30)
-######################################
+#cam = cv2.VideoCapture(0)
+#cam.set(cv2.CAP_PROP_FRAME_WIDTH, 913)
+#cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 512)
+cam = pygame.camera.Camera(pygame.camera.list_cameras()[0], (913, 512))
 
 ######################################
 # Carregando overlays 
@@ -33,7 +34,7 @@ loadscreen = pygame.transform.scale(loadscreen, screen_res)
 ######################################
 
 ######################################
-def editImage(imagem, filename, screen_res = screen_res):
+def editImage(filename, screen_res = screen_res):
 
     imagem = Image.open(os.path.join("temp", filename))
     
@@ -52,11 +53,13 @@ def editImage(imagem, filename, screen_res = screen_res):
 
 def frameProcess(frame, screen_res = screen_res):
 
-    frame = cv2.resize(frame, screen_res, interpolation=cv2.INTER_AREA)
-    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    frame = np.rot90(frame)
-    frame = pygame.surfarray.make_surface(frame)
-    frame = pygame.transform.flip(frame, True, False)
+    #frame = cv2.resize(frame, screen_res, interpolation=cv2.INTER_AREA)
+    #frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    #frame = np.rot90(frame)
+    #frame = pygame.surfarray.make_surface(frame)
+    #frame = pygame.transform.flip(frame, True, False)
+
+    frame = pygame.transform.scale(frame, screen_res)
     screen.blit(frame, (0,0))
     screen.blit(cam_overlay, (0, 0))
     pygame.display.flip()
@@ -70,61 +73,47 @@ def checkClick():
                 key = "esc"
             return key
 
-ret, frame = cam.read()
-
-if ret:
-    while True:
-
-        frameProcess(frame)
-
-        clock.tick(30)
-            
-        ret, frame = cam.read()
-
-        if checkClick() == "space":
-            
-            filename = datetime.datetime.now().strftime("%d-%m-%Y_%H-%M-%S Massa-festa-pinhao.png")
-            
-            start_time = pygame.time.get_ticks()
-
-            while pygame.time.get_ticks() - start_time < 150:
-
-                screen.fill((0, 0, 0))
-                pygame.display.flip()
-                pygame.time.wait(40)
-                screen.fill((255, 255, 255))
-                pygame.display.flip()
-                pygame.time.wait(40)
-
-                screen.blit(loadscreen,(0,0))
-                pygame.display.flip()
+frame = cam.get_image()
 
 
-                cam.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-                cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+while True:
 
-                ret, imagem = cam.read()
+    frameProcess(frame)
 
-                if ret:
-                    cv2.imwrite(os.path.join("temp", filename), imagem)
-                    imagem, show_image = editImage(imagem, filename)
-                    screen.blit(imagem, (0,0))
-                    pygame.display.flip()
+    clock.tick(30)
+        
+    frame = cam.get_image()
 
-                    while show_image == True:
-                        cam.set(cv2.CAP_PROP_FRAME_WIDTH, 913)
-                        cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 512)
-                        if checkClick() == "space":
-                            ret, frame = cam.read()
-                            frameProcess(frame)
-                            show_image = False
+    if checkClick() == "space":
+        
+        filename = datetime.datetime.now().strftime("%d-%m-%Y_%H-%M-%S Massa-festa-pinhao.png")
 
-                        elif checkClick() == "esc":
-                            cam.release()
-                            pygame.quit()
-                            sys.exit()
+        screen.blit(loadscreen,(0,0))
+        pygame.display.flip()
 
-                elif checkClick() == "esc":
-                    cam.release()
-                    pygame.quit()
-                    sys.exit()
+        cam = pygame.camera.Camera(pygame.camera.list_cameras()[0], (1280, 720))
+        imagem = cam.get_image()
+
+        #cv2.imwrite(os.path.join("temp", filename), imagem)
+        pygame.image.save(cam, os.path.join("temp", filename))
+        cam.set(cv2.CAP_PROP_FRAME_WIDTH, 913)
+        cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 512)
+        imagem, show_image = editImage(filename)
+        screen.blit(imagem, (0,0))
+        pygame.display.flip()
+
+        while show_image == True:
+            if checkClick() == "space":
+                frame = cam.get_image()
+                frameProcess(frame)
+                show_image = False
+
+            elif checkClick() == "esc":
+                cam.release()
+                pygame.quit()
+                sys.exit()
+
+    elif checkClick() == "esc":
+        cam.release()
+        pygame.quit()
+        sys.exit()
