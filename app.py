@@ -7,33 +7,9 @@ from PIL import Image
 import os
 import datetime
 
-######################################
-#Configurações
-import configparser
-######################################
-config = configparser.ConfigParser()
-config.read('config.ini')
-######
-cam_index = config.get('Config', 'cam_index')
+screen_res = (1280, 720)
 
-altura = config.get('Config', 'screen_altura')
-largura = config.get('Config', 'screen_largura')
-screen_res = altura, largura
-
-altura = config.get('Config', 'cam_altura')
-largura = config.get('Config', 'cam_largura')
-cam_res = altura, largura
-
-cam_overlay_path = ('Paths', 'cam_overlay_path')
-loadscreen_path = ('Paths', 'loadscreen_path')
-
-framerate = config.get('Config', 'framerate')
-animation_time = config.get('Config', 'animation_time')
-######################################
-
-######################################
 # Pygame
-import pygame
 pygame.init()
 screen = pygame.display.set_mode((screen_res[0],screen_res[1]), pygame.FULLSCREEN)
 clock = pygame.time.Clock()
@@ -41,32 +17,31 @@ clock = pygame.time.Clock()
 
 ######################################
 # Camera
-cam = cv2.VideoCapture(cam_index)
-cam.set(cv2.CAP_PROP_FRAME_WIDTH, cam_res[0])
-cam.set(cv2.CAP_PROP_FRAME_HEIGHT, cam_res[1])
+cam = cv2.VideoCapture(0)
+cam.set(cv2.CAP_PROP_FRAME_WIDTH, 913)
+cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 512)
 cam.set(cv2.CAP_PROP_FPS, 30)
 ######################################
 
 ######################################
 # Carregando overlays 
-cam_overlay = pygame.image.load(cam_overlay_path).convert_alpha()
+cam_overlay = pygame.image.load("assets//overlay.png").convert_alpha()
 cam_overlay = pygame.transform.scale(cam_overlay, screen_res)
-cam_overlay = pygame.transform.flip(cam_overlay, True, False)
 
-loadscreen = pygame.image.load(loadscreen_path)
+loadscreen = pygame.image.load('assets//loadscreen.png')
 loadscreen = pygame.transform.scale(loadscreen, screen_res)
 ######################################
 
 ######################################
 def editImage(imagem, filename, screen_res = screen_res):
-    save_path = "Fotos Massa//"
+
     imagem = Image.open(os.path.join("temp", filename))
     
-    overlay = Image.open("assets/overlay2.png")
+    overlay = Image.open('assets//overlay2.png')
     overlay = overlay.resize(imagem.size)
     
     imagem.paste(overlay, (0, 0), overlay)
-    imagem.save(save_path + filename)
+    imagem.save("Fotos Massa//" + filename)
     
     os.remove(os.path.join("temp", filename))
     
@@ -75,73 +50,81 @@ def editImage(imagem, filename, screen_res = screen_res):
 
     return imagem_py, True
 
+def frameProcess(frame, screen_res = screen_res):
+
+    frame = cv2.resize(frame, screen_res, interpolation=cv2.INTER_AREA)
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    frame = np.rot90(frame)
+    frame = pygame.surfarray.make_surface(frame)
+    frame = pygame.transform.flip(frame, True, False)
+    screen.blit(frame, (0,0))
+    screen.blit(cam_overlay, (0, 0))
+    pygame.display.flip()
+
+def checkClick():
+    for event in pygame.event.get():
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:
+                key = "space"
+            elif event.key == pygame.K_ESCAPE:
+                key = "esc"
+            return key
+
 ret, frame = cam.read()
+
 if ret:
     while True:
 
-        clock.tick(framerate)
+        frameProcess(frame)
 
-        frame = cv2.resize(frame, screen_res, interpolation=cv2.INTER_AREA)
-        imagem = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        imagem = np.rot90(imagem)
-
-        imagem = pygame.surfarray.make_surface(imagem)
-        imagem = pygame.transform.flip(imagem, True, False)
-
-        screen.blit(imagem, (0,0))
-        screen.blit(cam_overlay, (0, 0))
-        pygame.display.flip()
-
+        clock.tick(30)
+            
         ret, frame = cam.read()
 
-        for event in pygame.event.get():
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
+        if checkClick() == "space":
+            
+            filename = datetime.datetime.now().strftime("%d-%m-%Y_%H-%M-%S Massa-festa-pinhao.png")
+            
+            start_time = pygame.time.get_ticks()
 
-                    filename = datetime.datetime.now().strftime("%d-%m-%Y_%H-%M-%S Massa-festa-pinhao.png")
-                    
-                    start_time = pygame.time.get_ticks()
-                    while pygame.time.get_ticks() - start_time < animation_time:
+            while pygame.time.get_ticks() - start_time < 150:
 
-                        screen.fill((0, 0, 0))
-                        pygame.display.flip()
-                        pygame.time.wait(40)
-                        screen.fill((255, 255, 255))
-                        pygame.display.flip()
-                        pygame.time.wait(40)
+                screen.fill((0, 0, 0))
+                pygame.display.flip()
+                pygame.time.wait(40)
+                screen.fill((255, 255, 255))
+                pygame.display.flip()
+                pygame.time.wait(40)
 
-                    screen.blit(cachorro,(0,0))
+                screen.blit(loadscreen,(0,0))
+                pygame.display.flip()
+
+
+                cam.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+                cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+
+                ret, imagem = cam.read()
+
+                if ret:
+                    cv2.imwrite(os.path.join("temp", filename), imagem)
+                    imagem, show_image = editImage(imagem, filename)
+                    screen.blit(imagem, (0,0))
                     pygame.display.flip()
 
-
-                    cam.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-                    cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-                    ret, frame = cam.read()
-                    if ret:
-                        cv2.imwrite(os.path.join("temp", filename), frame)
-
-                        cam.set(cv2.CAP_PROP_FRAME_WIDTH, cam_res[0])
-                        cam.set(cv2.CAP_PROP_FRAME_HEIGHT, cam_res[1])
-
-                        imagem, show_image = editImage(frame, filename)
-                        screen.blit(imagem, (0,0))
-                        pygame.display.flip()
-
-                        while show_image == True:
+                    while show_image == True:
+                        cam.set(cv2.CAP_PROP_FRAME_WIDTH, 913)
+                        cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 512)
+                        if checkClick() == "space":
                             ret, frame = cam.read()
-                            for event in pygame.event.get():
-                                if event.type == pygame.KEYDOWN:
-                                    if event.key == pygame.K_SPACE:
-                                        screen.blit(imagem, (0,0))
-                                        screen.blit(cam_overlay, (0, 0))
-                                        pygame.display.flip()
-                                        show_image = False
-                                    elif event.key == pygame.K_ESCAPE:
-                                        cam.release()
-                                        pygame.quit()
-                                        sys.exit()
+                            frameProcess(frame)
+                            show_image = False
 
-                elif event.key == pygame.K_ESCAPE:
+                        elif checkClick() == "esc":
+                            cam.release()
+                            pygame.quit()
+                            sys.exit()
+
+                elif checkClick() == "esc":
                     cam.release()
                     pygame.quit()
                     sys.exit()
