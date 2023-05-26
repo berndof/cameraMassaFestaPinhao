@@ -40,6 +40,7 @@ while True:
         if event.type == pygame.KEYDOWN:
             camera.stop() 
             camera2.start()
+
             if event.key == pygame.K_SPACE:
                 start_time = pygame.time.get_ticks()
                 # Define o tempo da animação
@@ -52,7 +53,9 @@ while True:
                     else:
                         screen.fill((0, 0, 0))
                         pygame.display.flip()
-                time.sleep(1.3)
+
+                time.sleep(2)
+                ####AQUI BURRO! 
                 capture = camera2.get_image()
                 screen.blit(loadscreen, (0,0))
                 pygame.display.flip()
