@@ -25,13 +25,13 @@ class Capture():
         self.screen_res = self.screen.get_size() # Pega a resolução da janela = resolução máxima do monitor
 
         self.cam_overlay = pygame.image.load("assets//overlay.png").convert_alpha() # carrega o overlay da pasta overlay
-        self.cam_overlay = pygame.transform.scale(self.cam_overlay, self.screen_res)# redimennsiona para o tamanho da tela
+        self.cam_overlay = pygame.transform.smoothscale(self.cam_overlay, self.screen_res)# redimennsiona para o tamanho da tela
 
         self.loadscreen = pygame.image.load("assets//loadscreen.png").convert() # carrega o overlay da pasta overlay
-        self.loadscreen = pygame.transform.scale(self.loadscreen, self.screen_res)
+        self.loadscreen = pygame.transform.smoothscale(self.loadscreen, self.screen_res)
 
         self.overlay = pygame.image.load("assets//overlay2.png").convert_alpha() # carrega o overlay da pasta overlay
-        self.overlay = pygame.transform.scale(self.overlay, self.camera_full_res)
+        self.overlay = pygame.transform.smoothscale(self.overlay, self.camera_full_res)
 
         self.snapshot = pygame.surface.Surface(self.screen_res, 0, self.screen)
         self.picture = pygame.surface.Surface(self.screen_res, 0, self.screen)
@@ -49,8 +49,10 @@ class Capture():
         self.filename = datetime.datetime.now().strftime("%d-%m-%Y_%H-%M-%S Massa-festa-pinhao.png" )
         self.picture = self.camera2.get_image()
         self.picture.blit(self.overlay, (0,0))
-        pygame.image.save(self.picture, os.path.join("Fotos Massa", self.filename))   
-        self.screen.blit(pygame.transform.scale(self.picture, self.screen_res), (0,0))
+
+        pygame.image.save(self.picture, os.path.join("Fotos Massa", self.filename))
+        self.screen.blit(pygame.transform.smoothscale(self.picture, self.screen_res), (0,0))
+
         pygame.display.flip()
         self.taked = True
         self.connectCam1()
@@ -74,7 +76,7 @@ class Capture():
                 
         self.screen.blit(self.loadscreen, (0,0))
         pygame.display.flip()
-        time.sleep(1.4) 
+        time.sleep(2) 
 
     def connectCam1(self):
         self.camera2.stop()
@@ -90,8 +92,8 @@ class Capture():
 
             while True:
         
-                self.snapshot = pygame.transform.scale(self.camera.get_image(), self.screen_res)
-                self.snapshot.blit(pygame.transform.scale(self.cam_overlay, self.screen_res), (0,0))
+                self.snapshot = pygame.transform.smoothscale(self.camera.get_image(), self.screen_res)
+                self.snapshot.blit(pygame.transform.smoothscale(self.cam_overlay, self.screen_res), (0,0))
         
                 self.screen.blit(self.snapshot, (0,0))
         
